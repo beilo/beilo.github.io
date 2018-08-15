@@ -2,14 +2,9 @@
 title: RecyclerView 缓存
 date: 2018-08-13 14:18:59
 tags: Android
+toc: true
 ---
-- [目录](#%E7%9B%AE%E5%BD%95)
-    - [初始代码分析 getViewForPosition](#%E5%88%9D%E5%A7%8B%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90-getviewforposition)
-    - [RecycleView的四级缓存](#recycleview%E7%9A%84%E5%9B%9B%E7%BA%A7%E7%BC%93%E5%AD%98)
-        - [一级缓存 getChangedScrapViewForPosition & getScrapOrHiddenOrCachedHolderForPosition & getScrapOrCachedViewForId](#%E4%B8%80%E7%BA%A7%E7%BC%93%E5%AD%98-getchangedscrapviewforposition--getscraporhiddenorcachedholderforposition--getscraporcachedviewforid)
-        - [二级缓存 getScrapOrHiddenOrCachedHolderForPosition & getScrapOrCachedViewForId](#%E4%BA%8C%E7%BA%A7%E7%BC%93%E5%AD%98-getscraporhiddenorcachedholderforposition--getscraporcachedviewforid)
-        - [三级缓存 mViewCacheExtension.getViewForPositionAndType](#%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98-mviewcacheextensiongetviewforpositionandtype)
-        - [四级缓存 getRecycledViewPool().getRecycledView(type)](#%E5%9B%9B%E7%BA%A7%E7%BC%93%E5%AD%98-getrecycledviewpoolgetrecycledviewtype)
+
 # 目录
 
 
@@ -90,8 +85,12 @@ ViewHolder tryGetViewHolderForPositionByDeadline(int position,
 3. `ViewCacheExtension`实现自定义缓存.(自定义缓存)
 4. `ViewHolder`在首先会缓存在`mCachedViews`中，当超过了个数（比如默认为2）， 就会添加到`RecycledViewPool`中。`RecycledViewPool`会根据每个`ViewType`把`ViewHolder`分别存储在不同的列表中，每个`ViewType`最多缓存`DEFAULT_MAX_SCRAP = 5`个`ViewHolder`，如果`RecycledViewPool`没有被多个`RecycledView`共享，对于线性布局，每个`ViewType`最多只有一个缓存，如果是网格有多少行就缓存多少个。(缓存池)
 
-### 一级缓存 getChangedScrapViewForPosition & getScrapOrHiddenOrCachedHolderForPosition & getScrapOrCachedViewForId
+### 一级缓存
 ```
+getChangedScrapViewForPosition,
+getScrapOrHiddenOrCachedHolderForPosition,
+getScrapOrCachedViewForId,
+
 ViewHolder getChangedScrapViewForPosition(int position) {
     final int changedScrapSize;
     if (mChangedScrap == null || (changedScrapSize = mChangedScrap.size()) == 0) {
@@ -181,8 +180,11 @@ ViewHolder getScrapOrCachedViewForId(long id, int type, boolean dryRun) {
 
 ```
 
-### 二级缓存 getScrapOrHiddenOrCachedHolderForPosition & getScrapOrCachedViewForId
+### 二级缓存
 ```
+getScrapOrHiddenOrCachedHolderForPosition
+getScrapOrCachedViewForId
+
 ViewHolder getScrapOrHiddenOrCachedHolderForPosition(int position, boolean dryRun) {
     从mCachedViews取出ViewHodler,通过position
     final int cacheSize = mCachedViews.size();
@@ -220,15 +222,19 @@ ViewHolder getScrapOrCachedViewForId(long id, int type, boolean dryRun) {
 }
 ```
 
-### 三级缓存 mViewCacheExtension.getViewForPositionAndType
+### 三级缓存
 ```
+mViewCacheExtension.getViewForPositionAndType
+
 public abstract static class ViewCacheExtension {
     public abstract View getViewForPositionAndType(Recycler recycler, int position, int type);
 }
 ```
 
-### 四级缓存 getRecycledViewPool().getRecycledView(type)
+### 四级缓存
 ```
+getRecycledViewPool().getRecycledView(type)
+
 static class ScrapData {
     ArrayList<ViewHolder> mScrapHeap = new ArrayList<>();
     int mMaxScrap = DEFAULT_MAX_SCRAP;

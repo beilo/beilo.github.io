@@ -4,9 +4,6 @@ date: 2018-08-13 09:44:43
 tags: Android,JS
 ---
 # 目录
-- [目录](#%E7%9B%AE%E5%BD%95)
-    - [LogCatDialog](#logcatdialog)
-    - [vConsole](#vconsole)
 
 ## LogCatDialog
 LogCatDialog是一款可以在手机中打开logcat控制台.它的功能特点就是:
