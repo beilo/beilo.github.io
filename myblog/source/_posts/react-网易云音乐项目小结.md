@@ -8,7 +8,7 @@ toc: true
 
 # 学习搭建一个网易云音乐的项目
 
-**采用的技术框架**
+## 采用的技术框架
 - react 视图层框架
 - bable js转译
 - webpack 打包
@@ -156,7 +156,7 @@ module.exports = {
 }
 ```
 
-#### index.jsx
+#### index.jsx 入口文件
 
 ``` javascript
 index.jsx
@@ -254,7 +254,7 @@ class BasicLayout extends React.Component {
                 </Header>
                 <Content>
                     <div>
-                        <Switch> Switch只会展示一个Route
+                        <Switch>
                             <Route path="/login" component={Login}></Route>
                             <Route path="/songList" component={SongList}></Route>
                             <Route path="/playListDetail" component={PlayListDetail}>
@@ -446,7 +446,7 @@ class SongList extends React.Component {
 }
 ```
 
-### 总结
+## 总结
 前端的技术栈有点长,要慢慢的整理.现在我也只是简单使用,`dvaJs`更是入门.  
 接下来还有`react`的`PureComponent`,`无状态组件`,`生命周期`等等.  
 `dva`的话还要了解`react-router/react-saga/react-redux`,等等.学习的路还很长啊.
