@@ -1,11 +1,15 @@
 ---
-title: 从源码学习UEToll–捕获控件梳理
-date: 2018-11-1 14:38:34
+title: 从源码学习UEToll–捕获控件梳理+相对位置
+date: 2018-11-23 14:38:34
 tags: Android
 toc: true
 ---
 
-# 从源码学习UEToll--捕获控件梳理
+# 从源码学习UEToll
+#### 目标
+- [x] 捕获控件梳理
+- [x] 相对位置功能梳理
+- [x] 网格栅栏功能梳理
 
 ## 捕获代码分析
 ### TransparentActivity
@@ -412,3 +416,136 @@ public class UETCore implements IAttrs {
 8. `getTargetElement`中可以看到有个`elements`,再找到他的源头`->traverse->onAttachedToWindow`
 
 捕获代码并且展示的这一部分就差不多了.大致流程应该梳理的还算清楚了.
+
+
+## 相对位置分析
+### TransparentActivity
+``` java
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        ... 
+        switch (type) {
+            case TYPE_EDIT_ATTR:
+                ...
+            case TYPE_RELATIVE_POSITION:
+                // 这个是入口,将一个RelativePositionLayout,添加到了
+                // R.id.container 里面
+                vContainer.addView(new RelativePositionLayout(this));
+                break;
+            case TYPE_SHOW_GRIDDING:
+                ...
+            default:
+                ...
+        }
+        ...
+    }
+
+```
+
+### RelativePositionLayout
+``` java
+    private final int elementsNum = 2; // 指定View个数为2个
+    // View
+    private Element[] relativeElements = new Element[elementsNum];
+    private int searchCount = 0; // 搜索次数,也就是你点击View的次数
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                break;
+            case MotionEvent.ACTION_UP:
+                // 在这里处理View的逻辑,被整除的在第一个,否则在第二个,同时
+                // searchCount累加
+                final Element element = getTargetElement(event.getX(), event.getY());
+                if (element != null) {
+                    relativeElements[searchCount % elementsNum] = element;
+                    searchCount++;
+                    invalidate();
+                }
+                break;
+        }
+        return true;
+    }
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
+        if (relativeElements == null) {
+            return;
+        }
+
+        boolean doubleNotNull = true;
+        for (Element element : relativeElements) {
+            // (1)
+            if (element != null) {
+                Rect rect = element.getRect();
+                canvas.drawLine(0, rect.top, screenWidth, rect.top, dashLinePaint);
+                canvas.drawLine(0, rect.bottom, screenWidth, rect.bottom, dashLinePaint);
+                canvas.drawLine(rect.left, 0, rect.left, screenHeight, dashLinePaint);
+                canvas.drawLine(rect.right, 0, rect.right, screenHeight, dashLinePaint);
+                canvas.drawRect(rect, areaPaint);
+            } else {
+                doubleNotNull = false;
+            }
+        }
+
+        if (doubleNotNull) {
+            // (2)
+            Rect firstRect = relativeElements[searchCount % elementsNum].getRect();
+            Rect secondRect = relativeElements[(searchCount - 1) % elementsNum].getRect();
+
+            if (secondRect.top > firstRect.bottom) {
+                int x = secondRect.left + secondRect.width() / 2;
+                drawLineWithText(canvas, x, firstRect.bottom, x, secondRect.top);
+            }
+
+            if (firstRect.top > secondRect.bottom) {
+                int x = secondRect.left + secondRect.width() / 2;
+                drawLineWithText(canvas, x, secondRect.bottom, x, firstRect.top);
+            }
+
+            if (secondRect.left > firstRect.right) {
+                int y = secondRect.top + secondRect.height() / 2;
+                drawLineWithText(canvas, secondRect.left, y, firstRect.right, y);
+            }
+
+            if (firstRect.left > secondRect.right) {
+                int y = secondRect.top + secondRect.height() / 2;
+                drawLineWithText(canvas, secondRect.right, y, firstRect.left, y);
+            }
+
+            drawNestedAreaLine(canvas, firstRect, secondRect);
+            drawNestedAreaLine(canvas, secondRect, firstRect);
+        }
+    }
+
+```
+  *`onDraw`中的逻辑*
+  1. 初始化时`doubleNotNull`返回`false`,直接跳过`onDraw`的逻辑.
+  2. 当点击第一个`View`时.走标记为`(1)`处代码,为`View`绘画边框线和虚线,同时`doubleNotNull`返回`false`,跳过`onDraw`.
+  3. 当有两个`View`时.走标记为`(2)`处代码,计算两个`View`的相对位置然后根据不同情况画线.
+
+## 网格栅栏分析
+### TransparentActivity
+``` java
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        ... 
+        switch (type) {
+            case TYPE_EDIT_ATTR:
+                ...
+            case TYPE_RELATIVE_POSITION:
+                ...
+            case TYPE_SHOW_GRIDDING:
+                // 这个是入口,将一个GriddingLayout,添加到了
+                // R.id.container 里面
+                vContainer.addView(new GriddingLayout(this));
+                board.updateInfo("LINE_INTERVAL: " + DimenUtil.px2dip(GriddingLayout.LINE_INTERVAL, true));
+            default:
+                ...
+        }
+        ...
+    }
+
+```
+这里就是简单的添加了一个间隔为`5dp`网格View.
